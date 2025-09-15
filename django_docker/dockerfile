@@ -1,0 +1,29 @@
+# Use an official Python base image
+FROM python:3.12.9-slim-bookworm
+
+# Don’t buffer logs (show instantly)
+ENV PYTHONUNBUFFERED=1
+
+# Don’t write .pyc files
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# Set working directory
+WORKDIR /django_docker_project
+
+# Copy requirements first for caching
+COPY requirements.txt .
+
+# Upgrade pip 
+RUN pip install --no-cache-dir --upgrade pip
+
+# Install dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the rest of the app
+COPY . .
+
+# Expose the Django port
+EXPOSE 8000
+
+# Run the app
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

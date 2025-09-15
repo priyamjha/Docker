@@ -1,0 +1,127 @@
+# PROFESSIONAL Django DockerFile - dockerfile
+
+# Use an official lightweight Python base image
+FROM python:3.12.9-slim-bookworm
+
+# Environment settings
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+# Set working directory inside container
+WORKDIR /django_docker_project
+
+# Copy only requirements first (better caching)
+COPY requirements.txt .
+
+# Upgrade pip and install dependencies in one step
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt
+
+# Copy the entire project
+COPY . .
+
+# Collect static files
+RUN python manage.py collectstatic --noinput
+
+# Expose Django default port
+EXPOSE 8000
+
+# Run Django development server
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+
+--
+
+Notes
+
+For development → keep the runserver command.
+
+For production → replace CMD with Gunicorn:
+
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "django_project.wsgi:application"]
+
+--
+
+# PostgreSQL configuration - settings.py
+
+https://render.com/
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'database_name',
+        'USER': 'username',
+        'PASSWORD': 'password',
+        'HOST': 'External Database URL',
+        'PORT': '5432',
+    }
+}
+
+
+Terminal:
+
+python manage.py migrate
+
+--
+
+# Docker Compose - docker-compose.yml
+
+name: docker-project
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: dockerfile
+    image: app-image
+    container_name: app-container
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/django_docker_project
+
+
+Terminal:
+
+# If not, but after that remove --build and remove build:... from docker-compose.yml file
+docker compose up -d --build
+
+# If have docker image
+docker compose up -d
+
+--
+
+# Handle Static Assets - WhiteNoise
+
+https://whitenoise.readthedocs.io/en/latest/
+
+STATICFILES_DIRS = [BASE_DIR / 'static']
+
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+STORAGES = {
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
+Terminal:
+
+
+python manage.py collectstatic
+
+--
+
+Terminal:
+
+docker login ghcr.io --username <GitHub UserName> --password <GitHub Personal Access Token>
+
+docker build -t ghcr.io/priyamjha2003/app-image .
+
+docker push ghcr.io/priyamjha2003/app-image
+
+--
+
+# Deploy Docker Image TO render
+
+https://youtu.be/HcgV-8QY-0c?si=fxexydHhdzDQa8G9&t=4340
+

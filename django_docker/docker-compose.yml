@@ -1,0 +1,31 @@
+name: docker-project
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: dockerfile
+    image: django-docker-image
+    container_name: django-docker-container
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/django_docker_project
+    depends_on:
+      - db   # app waits for db service
+
+  db:
+    image: postgres:17
+    container_name: postgres-container
+    restart: always
+    environment:
+      POSTGRES_USER: my_user
+      POSTGRES_PASSWORD: my_password
+      POSTGRES_DB: my_database
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    ports:
+      - "5432:5432"
+
+volumes:
+  postgres_data:

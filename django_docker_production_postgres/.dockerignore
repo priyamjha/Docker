@@ -1,0 +1,5 @@
+.env
+venv/
+Dockerfile
+/env
+docker-compose.yml
